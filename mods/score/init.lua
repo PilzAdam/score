@@ -402,7 +402,7 @@ end)
 
 
 load_inventories()
-minetest.setting_set("static_spawnpoint", "1,-80,0")
+minetest.setting_set("static_spawnpoint", "0,-50,0")
 minetest.setting_set("enable_damage", "false")
 
 --
@@ -547,7 +547,7 @@ local mg_noise_params = {
 	offset = 0.0,
 	scale = 1.0,
 	spread = { x = 25, y = 25, z = 25 },
-	seed = mg_params.seed,
+	seed = 4,
 	octaves = 4,
 	persistence = 0.5,
 }
@@ -560,6 +560,7 @@ minetest.set_mapgen_params({
 
 local c_air
 local c_stones = {}
+local noise_map
 
 minetest.register_on_generated(function(minp, maxp, seed)
 	local c_air = c_air or minetest.get_content_id("air")
@@ -568,8 +569,10 @@ minetest.register_on_generated(function(minp, maxp, seed)
 	local vox_data = vox_manip:get_data()
 	local vox_area = VoxelArea:new({ MinEdge = vox_minp, MaxEdge = vox_maxp })
 
-	local noise_map = PerlinNoiseMap(mg_noise_params,
-			{ x = maxp.x - minp.x + 1, y = maxp.y - minp.y + 1, z = maxp.z - minp.z + 1 })
+	if not noise_map then
+		noise_map = minetest.get_perlin_map(mg_noise_params,
+				{ x = maxp.x - minp.x + 1, y = maxp.y - minp.y + 1, z = maxp.z - minp.z + 1 })
+	end
 	local noise_table = noise_map:get3dMap_flat(minp)
 	local noise_index = 0
 
@@ -580,7 +583,7 @@ minetest.register_on_generated(function(minp, maxp, seed)
 		noise_index = noise_index + 1
 		
 		local radius = math.sqrt(x * x + z * z)
-		local level = math.min(math.ceil(radius / LEVEL_EXTENT), LEVEL_MAX)
+		local level = math.max(math.min(math.ceil(radius / LEVEL_EXTENT), LEVEL_MAX), 1)
 
 		local noise = noise_table[noise_index] + math.abs((y + 50) / 32.0) - 0.8
 
