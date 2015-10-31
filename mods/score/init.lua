@@ -408,6 +408,7 @@ end
 minetest.register_on_joinplayer(function(player)
 	player:set_properties({ textures = {} })
 	player:set_sky("0x000000", "plain", {})
+	player:set_physics_override({ sneak_glitch = false })
 
 	player:hud_set_hotbar_itemcount(INV_SIZE)
 	player:hud_set_flags({
