@@ -79,7 +79,7 @@ end
 
 local function get_heal_cost(level)
 	local cost = {}
-	cost["score:turret_" .. level] = 15
+	cost["score:turret_" .. level] = 10
 	return cost
 end
 
@@ -655,7 +655,7 @@ minetest.register_tool(":", {
 -- Turret
 --
 
-local TURRET_RANGE = 10
+local TURRET_RANGE = 8
 
 minetest.register_entity("score:turret_flash", {
 	initial_properties = {

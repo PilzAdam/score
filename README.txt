@@ -5,12 +5,23 @@ Installation:
 -------------
 Place it in $path_user/games/ and select it in the main menu.
 
-Gameplay:
----------
+Tips and Tricks:
+----------------
 - The main goal is to mine Score
-- Mine iron to upgrade your pick
-- Mine coal to get more light
-- Move farther away from the spawn to get to advanced "levels"
+- Place a light after spawning so you can see stuff
+    - If you are unable to do that, try placing the light under yourself while
+      jumping and looking down
+- Levels are annular around spawn
+- To speed up your pick you need iron from the current level
+- To level up you need iron from the next level
+- To get more light you need coal
+- Turrets are the only source of damage; there is no fall damage
+- To heal you need turrets
+- When you die you spawn nearby, so you get a chance to get your light back
+- It is not considered cheating to use the coordinates in the F5 info
+    - If you want a real challenge do it without this
+- Sometimes you spawn inside of blocks
+    - Create a new world or dig yourself out in this case
 
 License of sourcecode:
 ----------------------
