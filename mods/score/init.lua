@@ -4,12 +4,14 @@
 --
 
 local LEVEL_EXTENT = 100
-local LEVEL_MAX = 300
+local LEVEL_MAX = 100
 local SPEED_MAX = 6
 
 local INV_PICK_INDEX = 1
 local INV_LIGHT_INDEX = 2
 local INV_SIZE = 2
+
+local HP_MAX = 20
 
 local function get_pick_info(player)
 	local hud_inv = player:get_inventory()
@@ -75,11 +77,17 @@ local function get_light_cost(level)
 	return cost
 end
 
+local function get_heal_cost(level)
+	local cost = {}
+	cost["score:turret_" .. level] = 15
+	return cost
+end
+
 local function update_formspec(player, not_enough_resources)
 	local inv = inventories[player:get_player_name()]
 	local hud_inv = player:get_inventory()
 
-	local formspec = "size[5,7]"
+	local formspec = "size[5,8]"
 	formspec = formspec .. "tableoptions[background=#00000000;border=false;highlight=#00000000]"
 	formspec = formspec .. "tablecolumns[color;image,"
 			.. "0=,"
@@ -91,7 +99,9 @@ local function update_formspec(player, not_enough_resources)
 			.. "6=" .. minetest.registered_items["score:coal_1"].tiles[1] .. ","
 			.. "7=" .. minetest.registered_items["score:coal_2"].tiles[1] .. ","
 			.. "8=" .. minetest.registered_items["score:iron_1"].tiles[1] .. ","
-			.. "9=" .. minetest.registered_items["score:iron_2"].tiles[1] .. ""
+			.. "9=" .. minetest.registered_items["score:iron_2"].tiles[1] .. ","
+			.. "10=" .. minetest.registered_items["score:turret_1"].tiles[1] .. ","
+			.. "11=" .. minetest.registered_items["score:turret_2"].tiles[1] .. ""
 			.. ";text;text]"
 	formspec = formspec .. "table[0,0;5,4;;"
 
@@ -136,6 +146,8 @@ local function update_formspec(player, not_enough_resources)
 				base = 6
 			elseif line[1]:match("^Iron") then
 				base = 8
+			elseif line[1]:match("^Turret") then
+				base = 10
 			end
 			local level = tonumber(line[1]:match("([%d]+)$"))
 			if level and base ~= 0 then
@@ -223,6 +235,30 @@ local function update_formspec(player, not_enough_resources)
 	if formspec ~= player:get_inventory_formspec() then
 		player:set_inventory_formspec(formspec)
 	end
+
+	formspec = formspec .. "button[0,7;2,1;btn_heal;Heal]"
+	formspec = formspec .. "tableoptions[background=#00000000;border=false;highlight=#00000000]"
+	formspec = formspec .. "tablecolumns[color;text;text]"
+	formspec = formspec .. "table[2,7;3,1;;"
+	if not_enough_resources == "heal" then
+		formspec = formspec .. "#FF0000,Requires:,,"
+	else
+		formspec = formspec .. ",Requires:,,"
+	end
+	local heal_cost = get_heal_cost(level)
+	for item, required in pairs(heal_cost) do
+		local name = minetest.registered_items[item].description
+		formspec = formspec .. "," .. name .. "," .. required .. ","
+	end
+	-- remove trailing comma
+	if formspec:match(",$") then
+		formspec = formspec:sub(1, -2)
+	end
+	formspec = formspec .. ";0]"
+
+	if formspec ~= player:get_inventory_formspec() then
+		player:set_inventory_formspec(formspec)
+	end
 end
 
 minetest.register_on_player_receive_fields(function(player, formname, fields)
@@ -231,6 +267,10 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 		local hud_inv = player:get_inventory()
 
 		local level, speed = get_pick_info(player)
+
+		if level >= LEVEL_MAX then
+			return true
+		end
 
 		local pick_cost = get_pick_level_cost(level)
 		for item, required in pairs(pick_cost) do
@@ -299,6 +339,32 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 		return true
 	end
 
+	if fields["btn_heal"] then
+		local inv = inventories[player:get_player_name()]
+		local hud_inv = player:get_inventory()
+
+		if player:get_hp() >= HP_MAX then
+			return
+		end
+
+		local heal_cost = get_heal_cost(get_pick_info(player))
+		for item, required in pairs(heal_cost) do
+			if not inv[item] or inv[item] < required then
+				update_formspec(player, "heal")
+				return true
+			end
+		end
+		for item, required in pairs(heal_cost) do
+			inv[item] = inv[item] - required
+		end
+
+		local new_health = math.min(player:get_hp() + 2, HP_MAX)
+		player:set_hp(new_health)
+
+		update_formspec(player)
+		return true
+	end
+
 	if fields["quit"] then
 		update_formspec(player)
 	end
@@ -311,6 +377,13 @@ local hud_ids = {
 }
 
 local function show_status_message(player, message)
+	local left, right = message:match("(.+)\n(.+)")
+	if left and right then
+		show_status_message(player, left)
+		show_status_message(player, right)
+		return
+	end
+
 	local id = hud_ids[player:get_player_name()]
 	local previous = player:hud_get(id).text
 	if previous ~= "" then
@@ -344,13 +417,12 @@ minetest.register_on_joinplayer(function(player)
 
 	minetest.sound_play("score_background", {
 		to_player = player:get_player_name(),
-		loop = true, -- TODO
+		loop = true,
 	})
 
 	local hud_inv = player:get_inventory()
 	hud_inv:set_size("main", INV_SIZE)
-	if not hud_inv:get_stack("main", INV_PICK_INDEX):get_name():match("^score:pick_") or
-			hud_inv:get_stack("main", INV_LIGHT_INDEX):get_name() ~= "score:light" then
+	if not hud_inv:get_stack("main", INV_PICK_INDEX):get_name():match("^score:pick_") then
 		hud_inv:set_stack("main", INV_PICK_INDEX, ItemStack(get_pick_name(1, 1)))
 		hud_inv:set_stack("main", INV_LIGHT_INDEX, ItemStack("score:light 10"))
 	end
@@ -364,6 +436,35 @@ minetest.register_on_joinplayer(function(player)
 
 	update_formspec(player)
 end)
+
+minetest.register_on_respawnplayer(function(player)
+	local level, speed = get_pick_info(player)
+	local hud_inv = player:get_inventory()
+	local inv = inventories[player:get_player_name()]
+
+	local score_penalty = 5 + level * 5
+
+	show_status_message(player, "Death Penalty:\n* Score -" .. score_penalty .. "\n* Speed -1")
+	speed = math.max(speed - 1, 1)
+	hud_inv:set_stack("main", INV_PICK_INDEX, ItemStack(get_pick_name(level, speed)))
+	inv["score:score"] = math.max(inv["score:score"] - score_penalty, 0)
+	update_formspec(player)
+
+	local pos = player:getpos()
+	pos = { x = pos.x + math.random(-50, 50), y = -50, z = pos.z + math.random(-50, 50) }
+	player:setpos(pos)
+
+	return true
+end)
+
+local enable_damage = false
+
+minetest.register_on_player_hpchange(function(player, hp_change)
+	if not enable_damage and hp_change < 0 then
+		return 0
+	end
+	return hp_change
+end, true)
 
 minetest.handle_node_drops = function(pos, drops, player)
 	for _, dropped_item in ipairs(drops) do
@@ -403,7 +504,7 @@ end)
 
 load_inventories()
 minetest.setting_set("static_spawnpoint", "0,-50,0")
-minetest.setting_set("enable_damage", "false")
+minetest.setting_set("enable_damage", "true")
 
 --
 -- Content
@@ -465,6 +566,18 @@ for level = 1, LEVEL_MAX do
 		clust_scarcity = 8 * 8 * 8,
 		clust_num_ores = 8,
 		clust_size = 4,
+	})
+
+	minetest.register_node("score:turret_" .. level, {
+		description = "Turret Level " .. level,
+		tiles = { "score_stone_" .. image .. ".png^score_turret.png" },
+		groups = { stone = level, turret = 1 },
+		light_source = 1,
+		sounds = {
+			footstep = { name = "score_footstep", gain = 1.0 },
+			place = { name=" score_place ", gain = 1.0 },
+			dig = { name="score_dig", gain = 0.5 },
+		},
 	})
 
 	minetest.register_node("score:score_ore_" .. level, {
@@ -539,6 +652,108 @@ minetest.register_tool(":", {
 })
 
 --
+-- Turret
+--
+
+local TURRET_RANGE = 10
+
+minetest.register_entity("score:turret_flash", {
+	initial_properties = {
+		physical = false,
+		visual = "sprite",
+		visual_size = { x = 0.5, y = 0.5 },
+		textures = { "score_flash.png" },
+		collisionbox = { 0, 0, 0, 0, 0, 0, },
+	},
+
+	on_activate = function(self, staticdata, dtime_s)
+		if staticdata and staticdata ~= "" then
+			local data = minetest.deserialize(staticdata)
+			self.base_pos = data.base_pos
+			self.level = data.level
+		end
+		self.object:set_properties({
+			textures = { "score_flash.png^[transform" .. math.random(0, 7) }
+		})
+		self.sound_handle = minetest.sound_play("score_flash", {
+			object = self.object,
+			loop = true,
+			max_hear_distance = TURRET_RANGE,
+		})
+	end,
+
+	on_step = function(self, dtime)
+		if not self.base_pos or vector.distance(self.base_pos, self.object:getpos()) > TURRET_RANGE + 3 then
+			self.object:remove()
+			minetest.sound_stop(self.sound_handle)
+		end
+		local mypos = self.object:getpos()
+		for _, player in ipairs(minetest.get_objects_inside_radius(mypos, 2.5)) do
+			if player:is_player() then
+				local playerpos = player:getpos()
+				local diff = vector.subtract(mypos, playerpos)
+				local hit = true
+				if hit and (diff.x > 0.6 or diff.x < -0.6) then
+					hit = false
+				end
+				if hit and (diff.z > 0.6 or diff.z < -0.6) then
+					hit = false
+				end
+				if hit and (diff.y > 2.1 or diff.y < -0.3) then
+					hit = false
+				end
+				if hit then
+					local level = get_pick_info(player)
+					local damage = 1
+					if self.level - level >= 0 then
+						damage = damage + 1 + (self.level - level)
+					end
+					enable_damage = true
+					player:punch(self.object, 1.0, {
+						full_punch_interval = 1.0,
+						damage_groups = { fleshy = damage },
+					}, vector.multiply(diff, -1))
+					enable_damage = false
+					minetest.sound_stop(self.sound_handle)
+					self.object:remove()
+				end
+			end
+		end
+	end,
+
+	get_staticdata = function(self)
+		return minetest.serialize({
+			base_pos = self.base_pos,
+			level = self.level,
+		})
+	end,
+})
+
+minetest.register_abm({
+	nodenames = { "group:turret" },
+	interval = 2,
+	chance = 1,
+	catch_up = false,
+	action = function(pos, node)
+		local level = tonumber(node.name:match("([%d]+)$")) or 1
+		for _, player in ipairs(minetest.get_objects_inside_radius(pos, TURRET_RANGE)) do
+			if player:is_player() then
+				local playerpos = vector.add(player:getpos(), { x = 0, y = 1.4, z = 0 })
+				local direction = vector.direction(pos, playerpos)
+				if minetest.line_of_sight(vector.add(pos, direction), playerpos, 0.01) then
+					local flash = minetest.add_entity(pos, "score:turret_flash")
+					if flash then
+						flash:get_luaentity().level = level
+						flash:get_luaentity().base_pos = pos
+						flash:setvelocity(vector.multiply(direction, 5))
+					end
+				end
+			end
+		end
+	end,
+})
+
+--
 -- Mapgen
 --
 
@@ -560,6 +775,7 @@ minetest.set_mapgen_params({
 
 local c_air
 local c_stones = {}
+local c_turrets = {}
 local noise_map
 
 minetest.register_on_generated(function(minp, maxp, seed)
@@ -575,6 +791,8 @@ minetest.register_on_generated(function(minp, maxp, seed)
 	end
 	local noise_table = noise_map:get3dMap_flat(minp)
 	local noise_index = 0
+
+	local pr_gen = PseudoRandom(seed)
 
 	for z = minp.z, maxp.z do
 	for y = minp.y, maxp.y do
@@ -593,7 +811,14 @@ minetest.register_on_generated(function(minp, maxp, seed)
 			end
 			vox_data[vox_index] = c_stones[level]
 		else
-			vox_data[vox_index] = c_air
+			if vox_data[vox_area:index(x, y - 1, z)] ~= c_air and pr_gen:next(1, 400) == 1 then
+				if not c_turrets[level] then
+					c_turrets[level] = minetest.get_content_id("score:turret_" .. level)
+				end
+				vox_data[vox_index] = c_turrets[level]
+			else
+				vox_data[vox_index] = c_air
+			end
 		end
 	end
 	end
