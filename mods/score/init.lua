@@ -13,6 +13,15 @@ local INV_SIZE = 2
 
 local HP_MAX = 20
 
+local hud_ids = {
+	--[[
+		playername = {
+			status_message = id,
+			healthbar = id,
+		},
+	]]
+}
+
 local function get_pick_info(player)
 	local hud_inv = player:get_inventory()
 	local pick = hud_inv:get_stack("main", INV_PICK_INDEX)
@@ -370,12 +379,6 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 	end
 end)
 
-local hud_ids = {
-	--[[
-		playername = id,
-	]]
-}
-
 local function show_status_message(player, message)
 	local left, right = message:match("(.+)\n(.+)")
 	if left and right then
@@ -384,7 +387,7 @@ local function show_status_message(player, message)
 		return
 	end
 
-	local id = hud_ids[player:get_player_name()]
+	local id = hud_ids[player:get_player_name()].status_message
 	local previous = player:hud_get(id).text
 	if previous ~= "" then
 		player:hud_change(id, "text", previous .. "\n" .. message)
@@ -405,14 +408,42 @@ end
 minetest.register_on_joinplayer(function(player)
 	player:set_properties({ textures = {} })
 	player:set_sky("0x000000", "plain", {})
+
 	player:hud_set_hotbar_itemcount(INV_SIZE)
-	hud_ids[player:get_player_name()] = player:hud_add({
+	player:hud_set_flags({
+		hotbar = true,
+		healthbar = false,
+		crosshair = true,
+		wielditem = true,
+		minimap = false,
+	})
+	
+	hud_ids[player:get_player_name()] = {}
+	hud_ids[player:get_player_name()].status_message = player:hud_add({
 		hud_elem_type = "text",
 		position = { x = 1.0, y = 1.0 },
 		text = "",
 		number = "0xFFFFFF",
 		offset = { x = -10, y = -10 },
 		alignment = { x = -1, y = -1 },
+	})
+	player:hud_add({
+		hud_elem_type = "statbar",
+		position = { x = 0.5, y = 1 },
+		text = "score_heart_empty.png",
+		number = HP_MAX,
+		direction = 0,
+		size = { x = 20, y = 20 },
+		offset = { x = -5 * HP_MAX, y = -(48 + 20 + 16) },
+	})
+	hud_ids[player:get_player_name()].healthbar = player:hud_add({
+		hud_elem_type = "statbar",
+		position = { x = 0.5, y = 1 },
+		text = "score_heart.png",
+		number = player:get_hp(),
+		direction = 0,
+		size = { x = 20, y = 20 },
+		offset = { x = -5 * HP_MAX, y = -(48 + 20 + 16) },
 	})
 
 	minetest.sound_play("score_background", {
@@ -463,6 +494,7 @@ minetest.register_on_player_hpchange(function(player, hp_change)
 	if not enable_damage and hp_change < 0 then
 		return 0
 	end
+	player:hud_change(hud_ids[player:get_player_name()].healthbar, number, player:get_hp() + hp_change)
 	return hp_change
 end, true)
 
