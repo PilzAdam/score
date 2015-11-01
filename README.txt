@@ -46,12 +46,20 @@ License of textures:
 Copyright (C) 2013 PilzAdam <pilzadam@minetest.net>
 CC BY-SA 3.0: http://creativecommons.org/licenses/by-sa/3.0/
 
-License of sound effects:
--------------------------
-Copyright (C) 2013 Mito551
-CC BY-SA 3.0: http://creativecommons.org/licenses/by-sa/3.0/
+License of sounds:
+------------------
+score_dig.ogg, score_footstep.*.ogg:
+  Copyright (C) 2013Mito551
+  CC BY-SA 3.0: http://creativecommons.org/licenses/by-sa/3.0/
 
-License of background music (score_background.ogg):
----------------------------------------------------
-Copyright (C) 2006 natlyea https://libre.fm/artist/natlyea/
-CC BY 2.5: http://creativecommons.org/licenses/by/2.5/
+score_background.*.ogg:
+  Copyright (C) 2006 natlyea (https://libre.fm/artist/natlyea/)
+  CC BY 2.5: http://creativecommons.org/licenses/by/2.5/
+
+score_craft.ogg:
+  Copyright (C) 2015 MrAuralization (https://freesound.org/people/MrAuralization/)
+  CC BY 3.0: http://creativecommons.org/licenses/by/3.0/
+
+score_flash.ogg:
+  Copyright (C) 2015 PilzAdam <pilzadam@minetest.net>
+  CC BY-SA 3.0: http://creativecommons.org/licenses/by-sa/3.0/

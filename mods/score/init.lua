@@ -22,6 +22,32 @@ local hud_ids = {
 	]]
 }
 
+local function show_status_message(player, message)
+	local left, right = message:match("(.+)\n(.+)")
+	if left and right then
+		show_status_message(player, left)
+		show_status_message(player, right)
+		return
+	end
+
+	local id = hud_ids[player:get_player_name()].status_message
+	local previous = player:hud_get(id).text
+	if previous ~= "" then
+		player:hud_change(id, "text", previous .. "\n" .. message)
+	else
+		player:hud_change(id, "text", message)
+	end
+	minetest.after(5, function(player, id)
+		local previous = player:hud_get(id).text
+		local pos = previous:find("\n")
+		if pos then
+			player:hud_change(id, "text", previous:sub(pos + 1))
+		else
+			player:hud_change(id, "text", "")
+		end
+	end, player, id)
+end
+
 local function get_pick_info(player)
 	local hud_inv = player:get_inventory()
 	local pick = hud_inv:get_stack("main", INV_PICK_INDEX)
@@ -282,6 +308,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 		local level, speed = get_pick_info(player)
 
 		if level >= LEVEL_MAX then
+			show_status_message(player, "Already at max level")
 			return true
 		end
 
@@ -289,6 +316,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 		for item, required in pairs(pick_cost) do
 			if not inv[item] or inv[item] < required then
 				update_formspec(player, "pick_level")
+				show_status_message(player, "Not enough resources")
 				return true
 			end
 		end
@@ -298,6 +326,10 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 
 		hud_inv:set_stack("main", INV_PICK_INDEX, ItemStack(get_pick_name(level + 1, math.max(speed - 1, 1))))
 
+		minetest.sound_play("score_craft", {
+			to_player = player:get_player_name(),
+		})
+		show_status_message(player, "+1 Pick level")
 		update_formspec(player)
 		return true
 	end
@@ -309,6 +341,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 		local level, speed = get_pick_info(player)
 
 		if speed >= SPEED_MAX then
+			show_status_message(player, "Already at max speed")
 			return true
 		end
 
@@ -316,6 +349,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 		for item, required in pairs(pick_cost) do
 			if not inv[item] or inv[item] < required then
 				update_formspec(player, "pick_speed")
+				show_status_message(player, "Not enough resources")
 				return true
 			end
 		end
@@ -325,6 +359,10 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 
 		hud_inv:set_stack("main", INV_PICK_INDEX, ItemStack(get_pick_name(level, speed + 1)))
 
+		minetest.sound_play("score_craft", {
+			to_player = player:get_player_name(),
+		})
+		show_status_message(player, "+1 Pick speed")
 		update_formspec(player)
 		return true
 	end
@@ -337,6 +375,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 		for item, required in pairs(light_cost) do
 			if not inv[item] or inv[item] < required then
 				update_formspec(player, "light")
+				show_status_message(player, "Not enough resources")
 				return true
 			end
 		end
@@ -348,6 +387,10 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 		light:add_item(ItemStack("score:light"))
 		hud_inv:set_stack("main", INV_LIGHT_INDEX, light)
 
+		minetest.sound_play("score_craft", {
+			to_player = player:get_player_name(),
+		})
+		show_status_message(player, "+1 Light")
 		update_formspec(player)
 		return true
 	end
@@ -357,6 +400,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 		local hud_inv = player:get_inventory()
 
 		if player:get_hp() >= HP_MAX then
+			show_status_message(player, "Already at max health")
 			return
 		end
 
@@ -364,6 +408,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 		for item, required in pairs(heal_cost) do
 			if not inv[item] or inv[item] < required then
 				update_formspec(player, "heal")
+				show_status_message(player, "Not enough resources")
 				return true
 			end
 		end
@@ -374,6 +419,10 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 		local new_health = math.min(player:get_hp() + 2, HP_MAX)
 		player:set_hp(new_health)
 
+		minetest.sound_play("score_craft", {
+			to_player = player:get_player_name(),
+		})
+		show_status_message(player, "+1 Health")
 		update_formspec(player)
 		return true
 	end
@@ -382,32 +431,6 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 		update_formspec(player)
 	end
 end)
-
-local function show_status_message(player, message)
-	local left, right = message:match("(.+)\n(.+)")
-	if left and right then
-		show_status_message(player, left)
-		show_status_message(player, right)
-		return
-	end
-
-	local id = hud_ids[player:get_player_name()].status_message
-	local previous = player:hud_get(id).text
-	if previous ~= "" then
-		player:hud_change(id, "text", previous .. "\n" .. message)
-	else
-		player:hud_change(id, "text", message)
-	end
-	minetest.after(5, function(player, id)
-		local previous = player:hud_get(id).text
-		local pos = previous:find("\n")
-		if pos then
-			player:hud_change(id, "text", previous:sub(pos + 1))
-		else
-			player:hud_change(id, "text", "")
-		end
-	end, player, id)
-end
 
 minetest.register_on_joinplayer(function(player)
 	player:set_properties({ textures = {} })
