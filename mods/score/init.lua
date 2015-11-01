@@ -718,7 +718,8 @@ minetest.register_entity("score:turret_flash", {
 	end,
 
 	on_step = function(self, dtime)
-		if not self.base_pos or vector.distance(self.base_pos, self.object:getpos()) > TURRET_RANGE + 3 then
+		if not self.base_pos or vector.distance(self.base_pos, self.object:getpos()) > TURRET_RANGE + 3
+				or minetest.get_node(self.object:getpos()).name ~= "air" then
 			self.object:remove()
 			minetest.sound_stop(self.sound_handle)
 		end
@@ -776,11 +777,11 @@ minetest.register_abm({
 				local playerpos = vector.add(player:getpos(), { x = 0, y = 1.4, z = 0 })
 				local direction = vector.direction(pos, playerpos)
 				if minetest.line_of_sight(vector.add(pos, direction), playerpos, 0.01) then
-					local flash = minetest.add_entity(pos, "score:turret_flash")
+					local flash = minetest.add_entity(vector.add(pos, direction), "score:turret_flash")
 					if flash then
 						flash:get_luaentity().level = level
 						flash:get_luaentity().base_pos = pos
-						flash:setvelocity(vector.multiply(direction, 5))
+						flash:setvelocity(vector.multiply(direction, 4.5))
 					end
 				end
 			end
