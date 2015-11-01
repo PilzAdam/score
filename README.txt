@@ -49,7 +49,7 @@ CC BY-SA 3.0: http://creativecommons.org/licenses/by-sa/3.0/
 License of sounds:
 ------------------
 score_dig.ogg, score_footstep.*.ogg:
-  Copyright (C) 2013Mito551
+  Copyright (C) 2013 Mito551
   CC BY-SA 3.0: http://creativecommons.org/licenses/by-sa/3.0/
 
 score_background.*.ogg:
