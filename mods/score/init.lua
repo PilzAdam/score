@@ -208,7 +208,7 @@ local function update_formspec(player, not_enough_resources)
 	formspec = formspec .. "tablecolumns[color;text;text]"
 	formspec = formspec .. "table[6,0;3,1.1;;"
 	if level >= LEVEL_MAX then
-		formspec = formspec .. ",Max. level,,"
+		formspec = formspec .. "#00FF00,Max. level,,"
 	else
 		if not_enough_resources == "pick_level" then
 			formspec = formspec .. "#FF0000,Requires:,,"
@@ -220,19 +220,19 @@ local function update_formspec(player, not_enough_resources)
 			local name = minetest.registered_items[item].description
 			formspec = formspec .. ",  " .. name .. "," .. required .. ","
 		end
-		-- remove trailing comma
-		if formspec:match(",$") then
-			formspec = formspec:sub(1, -2)
-		end
-		formspec = formspec .. ";0]"
 	end
+	-- remove trailing comma
+	if formspec:match(",$") then
+		formspec = formspec:sub(1, -2)
+	end
+	formspec = formspec .. ";0]"
 
 	formspec = formspec .. "button[4,1;2,1;btn_pick_speed;Speed Pick up]"
 	formspec = formspec .. "tableoptions[background=#00000000;border=false;highlight=#00000000]"
 	formspec = formspec .. "tablecolumns[color;text;text]"
 	formspec = formspec .. "table[6,1;3,1.1;;"
 	if speed >= SPEED_MAX then
-		formspec = formspec .. ",Max. speed for this level,,"
+		formspec = formspec .. "#00FF00,Max. speed,,"
 	else
 		if not_enough_resources == "pick_speed" then
 			formspec = formspec .. "#FF0000,Requires:,,"
@@ -244,12 +244,12 @@ local function update_formspec(player, not_enough_resources)
 			local name = minetest.registered_items[item].description
 			formspec = formspec .. ",  " .. name .. "," .. required .. ","
 		end
-		-- remove trailing comma
-		if formspec:match(",$") then
-			formspec = formspec:sub(1, -2)
-		end
-		formspec = formspec .. ";0]"
 	end
+	-- remove trailing comma
+	if formspec:match(",$") then
+		formspec = formspec:sub(1, -2)
+	end
+	formspec = formspec .. ";0]"
 
 	formspec = formspec .. "button[4,2;2,1;btn_light;Craft Light]"
 	formspec = formspec .. "tableoptions[background=#00000000;border=false;highlight=#00000000]"
@@ -279,15 +279,19 @@ local function update_formspec(player, not_enough_resources)
 	formspec = formspec .. "tableoptions[background=#00000000;border=false;highlight=#00000000]"
 	formspec = formspec .. "tablecolumns[color;text;text]"
 	formspec = formspec .. "table[6,3;3,1.1;;"
-	if not_enough_resources == "heal" then
-		formspec = formspec .. "#FF0000,Requires:,,"
+	if player:get_hp() >= HP_MAX then
+		formspec = formspec .. "#00FF00,Max. health,,"
 	else
-		formspec = formspec .. ",Requires:,,"
-	end
-	local heal_cost = get_heal_cost(level)
-	for item, required in pairs(heal_cost) do
-		local name = minetest.registered_items[item].description
-		formspec = formspec .. ",  " .. name .. "," .. required .. ","
+		if not_enough_resources == "heal" then
+			formspec = formspec .. "#FF0000,Requires:,,"
+		else
+			formspec = formspec .. ",Requires:,,"
+		end
+		local heal_cost = get_heal_cost(level)
+		for item, required in pairs(heal_cost) do
+			local name = minetest.registered_items[item].description
+			formspec = formspec .. ",  " .. name .. "," .. required .. ","
+		end
 	end
 	-- remove trailing comma
 	if formspec:match(",$") then
@@ -522,7 +526,7 @@ minetest.register_on_player_hpchange(function(player, hp_change)
 	if not enable_damage and hp_change < 0 then
 		return 0
 	end
-	player:hud_change(hud_ids[player:get_player_name()].healthbar, number, player:get_hp() + hp_change)
+	player:hud_change(hud_ids[player:get_player_name()].healthbar, "number", player:get_hp() + hp_change)
 	return hp_change
 end, true)
 
