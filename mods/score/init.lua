@@ -649,6 +649,7 @@ for level = 1, LEVEL_MAX do
 			footstep = { name = "score_footstep", gain = 1.0 },
 			place = { name=" score_place ", gain = 1.0 },
 			dig = { name="score_dig", gain = 0.5 },
+			dug = { name="score_score", gain = 1.0 },
 		},
 	})
 

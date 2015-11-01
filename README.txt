@@ -60,6 +60,6 @@ score_craft.ogg:
   Copyright (C) 2015 MrAuralization (https://freesound.org/people/MrAuralization/)
   CC BY 3.0: http://creativecommons.org/licenses/by/3.0/
 
-score_flash.ogg:
+score_flash.ogg, score_score.ogg:
   Copyright (C) 2015 PilzAdam <pilzadam@minetest.net>
   CC BY-SA 3.0: http://creativecommons.org/licenses/by-sa/3.0/
