@@ -675,6 +675,13 @@ minetest.register_node("score:light", {
 	on_drop = function(itemstack, dropper, pos)
 		return itemstack
 	end,
+	after_place_node = function(pos, placer, itemstack, pointed_thing)
+		local under = minetest.get_node(pointed_thing.under)
+		if under.name == "score:light" then
+			minetest.remove_node(pos)
+			return true
+		end
+	end,
 })
 
 minetest.register_craftitem("score:score", {
