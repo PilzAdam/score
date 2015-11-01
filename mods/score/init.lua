@@ -105,12 +105,16 @@ local function update_formspec(player, not_enough_resources)
 			.. "3=" .. minetest.registered_items["score:score_ore_1"].tiles[1] .. ","
 			.. "4=" .. minetest.registered_items["score:stone_1"].tiles[1] .. ","
 			.. "5=" .. minetest.registered_items["score:stone_2"].tiles[1] .. ","
-			.. "6=" .. minetest.registered_items["score:coal_1"].tiles[1] .. ","
-			.. "7=" .. minetest.registered_items["score:coal_2"].tiles[1] .. ","
-			.. "8=" .. minetest.registered_items["score:iron_1"].tiles[1] .. ","
-			.. "9=" .. minetest.registered_items["score:iron_2"].tiles[1] .. ","
-			.. "10=" .. minetest.registered_items["score:turret_1"].tiles[1] .. ","
-			.. "11=" .. minetest.registered_items["score:turret_2"].tiles[1] .. ""
+			.. "6=" .. minetest.registered_items["score:stone_3"].tiles[1] .. ","
+			.. "7=" .. minetest.registered_items["score:coal_1"].tiles[1] .. ","
+			.. "8=" .. minetest.registered_items["score:coal_2"].tiles[1] .. ","
+			.. "9=" .. minetest.registered_items["score:coal_3"].tiles[1] .. ","
+			.. "10=" .. minetest.registered_items["score:iron_1"].tiles[1] .. ","
+			.. "11=" .. minetest.registered_items["score:iron_2"].tiles[1] .. ","
+			.. "12=" .. minetest.registered_items["score:iron_3"].tiles[1] .. ","
+			.. "13=" .. minetest.registered_items["score:turret_1"].tiles[1] .. ","
+			.. "14=" .. minetest.registered_items["score:turret_2"].tiles[1] .. ","
+			.. "15=" .. minetest.registered_items["score:turret_3"].tiles[1] .. ""
 			.. ";text;text]"
 	formspec = formspec .. "table[0,0;3.9,4;;"
 
@@ -152,15 +156,15 @@ local function update_formspec(player, not_enough_resources)
 			if line[1]:match("^Stone") then
 				base = 4
 			elseif line[1]:match("^Coal") then
-				base = 6
+				base = 7
 			elseif line[1]:match("^Iron") then
-				base = 8
-			elseif line[1]:match("^Turret") then
 				base = 10
+			elseif line[1]:match("^Turret") then
+				base = 13
 			end
 			local level = tonumber(line[1]:match("([%d]+)$"))
 			if level and base ~= 0 then
-				image = base + ((level - 1) % 2)
+				image = base + ((level - 1) % 3)
 			end
 		end
 		formspec = formspec .. "," .. image .. "," .. line[1] .. "," .. line[2] .. ","
@@ -545,7 +549,7 @@ minetest.setting_set("enable_damage", "true")
 
 for level = 1, LEVEL_MAX do
 
-	local image = (level - 1) % 2 + 1
+	local image = (level - 1) % 3 + 1
 
 	minetest.register_node("score:stone_" .. level, {
 		description = "Stone Level " .. level,
@@ -679,8 +683,8 @@ minetest.register_craftitem("score:score", {
 
 minetest.register_tool(":", {
 	type = "none",
-	wield_image = "hand.png",
-	wield_scale = {x=1,y=1,z=1.5},
+	wield_image = "score_hand.png",
+	wield_scale = { x = 1, y = 1, z = 1.5 },
 	range = 4,
 })
 
@@ -705,9 +709,7 @@ minetest.register_entity("score:turret_flash", {
 			self.base_pos = data.base_pos
 			self.level = data.level
 		end
-		self.object:set_properties({
-			textures = { "score_flash.png^[transform" .. math.random(0, 7) }
-		})
+		self.level = self.level or 1
 		self.sound_handle = minetest.sound_play("score_flash", {
 			object = self.object,
 			loop = true,
